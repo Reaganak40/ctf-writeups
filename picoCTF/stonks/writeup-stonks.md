@@ -284,7 +284,7 @@ PD......`!....1..0D.PD.pico.CTF{.I_l0.5t_4.ll_m.y_m0.n3y_.6148.be54.}..@.tz...
 ```
 
 We can see the picoCTF{...}, now we just need to pretty it but a bit. I determined the *printf* stack offsets to get to our buffer are between
-arguments **$14** and **$24**. These should also always be full hex values with 8 bytes. Scoping the format string to these offsets, and removing
+arguments **$14** and **$24**. These should also always be full hex values with 8 digits. Scoping the format string to these offsets, and removing
 the excessive '.' delimiter we get this for our final script.
 
 ```python
