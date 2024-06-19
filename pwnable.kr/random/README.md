@@ -2,12 +2,9 @@
 
 ## Description
 
-Mommy told me to make a passcode based login system.
-My initial C code was compiled without any error!
-Well, there was some compiler warning, but who cares about that?
+Daddy, teach me how to use random value in programming!
 
-ssh passcode@pwnable.kr -p2222 (pw:guest)
-
+ssh random@pwnable.kr -p2222 (pw:guest)
 
 ## Initial findings
 
