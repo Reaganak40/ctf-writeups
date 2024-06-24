@@ -1,0 +1,3 @@
+0x080487cc in fast_memcpy ()
+
+b *0x80487c7
