@@ -1,9 +1,0 @@
-#Ghidra Lock File
-#Thu Jun 27 09:46:13 EDT 2024
-<META>\ Supports\ File\ Channel\ Locking=Channel Lock
-Hostname=pen-vm
-OS\ Architecture=amd64
-OS\ Name=Linux
-OS\ Version=6.8.0-35-generic
-Timestamp=6/27/24, 9\:46\u202FAM
-Username=cicero
